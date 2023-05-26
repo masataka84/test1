@@ -1,1 +1,26 @@
-prova
+apiVersion: apps/v1 # specifica il gruppo di api da usare durante la creazione della risorsa
+kind: Deployment # specifica il tipo di risorsa da creare (object)
+metadata: #Specifica il nome della distribuzione. Questo file eseguirà l'immagine nginx da Docker Hub.
+  name: nginx # 
+spec: #Specifica il numero di pod da creare. Questo file creerà tre pod duplicati.
+  replicas: 3
+  selector: #Specifica quali pod saranno interessati da questa distribuzione.
+    matchLabels: #Contiene una mappa di coppie {key, value} che consentono alla distribuzione di trovare e gestire i pod creati.
+      app: nginx #Deve corrispondere .spec.template.metadata.labelsa .
+  template:
+    metadata:
+      labels: #Specifica le coppie {key, value} associate all'oggetto .
+        app: nginx   #Deve corrispondere .spec.selector.matchLabelsa .
+    spec:
+      containers: #Specifica l'elenco di contenitori appartenenti al pod.
+      - name: nginx #Specifica il nome del contenitore specificato come etichetta DNS.
+        image: mcr.microsoft.com/oss/nginx/nginx:1.15.2-alpine #Specifica il nome dell'immagine del contenitore
+        ports: #Specifica l'elenco di porte da esporre dal contenitore.
+        - containerPort: 80 #Specifica il numero di porte da esporre nell'indirizzo IP del pod.
+        resources: #Specifica le risorse di calcolo richieste dal contenitore.
+          requests: #Specifica la quantità minima di risorse di calcolo necessarie.
+            cpu: 250m #Specifica la quantità minima di CPU richiesta.
+            memory: 64Mi #Specifica la quantità minima di memoria richiesta.
+          limits: #Specifica la quantità massima di risorse di calcolo consentite. Questo limite viene applicato dal kubelet.
+            cpu: 500m #Specifica la quantità massima di CPU richiesta.
+            memory: 256Mi #Specifica la quantità massima di memoria richiesta.
