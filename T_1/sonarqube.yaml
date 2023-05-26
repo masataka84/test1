@@ -1,0 +1,46 @@
+language: java
+jdk:
+  - openjdk11
+git:
+  depth: false
+addons:
+  sonarcloud:
+    organization: "sbaudoin-github"
+    token:
+      secure: "m88KirUCH0/d7o2u19b1vBOyQOcMLXQmlAx3GdoYNQgOdjzLVqHUV70+FmIeVM/DqgzyUG31BZkwWR5mpl0S7ZKQ3IlES6xPp7xvf4QbVsmVoWTBce69/Nfn2YsecmEFGwhRJ4+0ehxaE3/3NL0WDCCCkVbnpsVaiCaru+b1jdmX5VvX0yIOM8lmKStr1Tbdvb05tCl0dN6Q4bZUU/hMw/RXHLG9+kiDFB94Wuo7QUiZA+lAA9//tnPCaYHtAOF9HVByBZTQdYJghwX0RnR3y7irtsLaW48r1EHO+2I/dHzJKXX131ZR2f9M2UuSk5fOTQ59emcLWKA6ILeeVdYyNr/V7ZmcS70j3YzhQE6Q05KzEqG090onRltq3r8J+OmlzjNUE0Zw6EU4wrCA2zBCQUvUHyyMiXsCe892GiBSU55BVTa7RBOSo2zrYhR9GOXKIv6uVIqavlOOKOXKF3+8AZZcc0uABEnR9YD9QfU9zXsTzZhYTuvIQ1a0XUsueSVRYpzr6hS+o8l4FFOC0PSskeelWFFlbM2CpDUCc5netRi9M44y9yCxC0S+DemUuKxRd8TpRAI4EWADkQUuYg4YagDQzirZZTORmYjURwDxYRUebi/VMh6vPam6e7oTr3EqlBsEQSeHa7Cl/9lsCMzFRFNfMO6+BmPmzzf0W2vYRh4="
+sudo: required
+services:
+  - docker
+cache:
+  directories:
+    - '$HOME/.m2/repository'
+    - '$HOME/.sonar/cache'
+before_install:
+  - if [ ! -z "$GPG_SECRET_KEYS" ]; then echo $GPG_SECRET_KEYS | base64 --decode | $GPG_EXECUTABLE --import; fi
+  - if [ ! -z "$GPG_OWNERTRUST" ]; then echo $GPG_OWNERTRUST | base64 --decode | $GPG_EXECUTABLE --import-ownertrust; fi
+install:
+  - mvn --settings .travis/settings.xml install -DskipTests=true -Dgpg.skip -Dmaven.javadoc.skip=true -B -V
+script:
+  - 'if [ -z "$SONAR_TOKEN" ]; then mvn clean package -P audit; else mvn clean package sonar:sonar -P audit; fi'
+  - bash it/it.sh 6.7-community 3.4.0.1729 || travis_terminate 1
+  - bash it/it.sh 7.9-community 3.4.0.1729 11 || travis_terminate 1
+  - bash it/it.sh 8.9-community 4.5.0.2216 11 || travis_terminate 1
+  - bash it/it.sh 9.1-community 4.6.2.2472 11 || travis_terminate 1
+  - bash it/it.sh 9.2-community 4.6.2.2472 11
+deploy:
+  - provider: script
+    script: bash .travis/deploy.sh
+    skip_cleanup: true
+    on:
+      repo: sbaudoin/sonar-yaml
+      all_branches: true
+  - provider: releases
+    api_key:
+      secure: "2Hk9vXRJ460B/CDbengjbfgxoZIPvroyCF2LoePJd4YV5OrVlJQyFvqe8Q7vpQCifDaKFBUufEZEPEpuYw32dE647FDaADNJPnDENPa2RnLX9pq1EtjadhvLLBQ7hrGoo7JhFhVsSkrQzolRGxa2phh4Sd8WvLFVLYokEcY1xU/IWLrP1iaoH4tL2X7tmHnFxmjzLwwf19cdYlpdrqrsRFJMxXWOJR80H4nf8laEzDeVrIB6GEt/vysNTiQArnjS+ld9LryLfIE+RxWUvnnIHsYR+fc7n2FArW279BsdLV0yI4aTLt/2+mIriMKw1zjCmczXWKDBQzlNbhRHi4/pdLNvX9ixZjvcg0jNGqHazDe/k5fpDR/qbf8hOZ/S6sRkt800OpRHYClVUe5NPf0pXy8pdipoLonuYX5qBO63m0A9L9KqlZSy+X1TgE6zMhEjbrIVXDHJoiAwWIQuLDk8ljaHGjPgUNtwjCQggvj1TP7TLYZdYHHYui63VZRYMJ0wihTwR3MZ8bor+e9GOu/M/aPDtHAWKmfjw8wu4B/N6eKbXt8VDTqwaSOvhXBoPN8f+EGecPEkqbw/MQn2Iq/PCnkrj3U+HNS45aHVijP+BBPra2+T6L4JYEw2/+RBZpHvayrcuhoVAMB37iW/3KhIszqs1bfhd/8eEKjsJeQw6qo="
+    file_glob: true
+    file:
+      - target/sonar-yaml-plugin-*.jar
+    skip_cleanup: true
+    on:
+      repo: sbaudoin/sonar-yaml
+      tags: true
