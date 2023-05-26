@@ -30,7 +30,7 @@ script:
 deploy:
   - provider: script
     script: bash .travis/deploy.sh
-    skip_cleanup: true
+    skip_cleanup: true #prova
     on:
       repo: sbaudoin/sonar-yaml
       all_branches: true
